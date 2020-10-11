@@ -1,73 +1,85 @@
 var leiku = {
-    post: function (url, param, succ, fail, async, callback) {
-        param.dt_dj1qko = window.localStorage.getItem("dt_dj1qko") ? JSON.parse(window.localStorage.getItem("dt_dj1qko")).str : '';
-        $.ajax({
-            type: "POST",
+    post: function (url, param, succ, fail, callback) {
+        if (callback) { callback() }
+        if (localStorage.getItem('dt_ptyub7')) {
+            param.dt_ptyub7 = JSON.parse(localStorage.getItem('dt_ptyub7')).str;
+        }
+        axios({
+            method: "post",
             url: url,
-            data: param,
-            async: async,
-            cache: false,
+            data: Qs.stringify(param),
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'
-            },
-            success: function (res) {
-                if (res.success) {
-                    succ(res);
-                } else {
-                    console.log(res)
-                    if (res.code == 1) {
-                        if (res.obj) {
-                            if (res.obj.Type == 1) {
-                                if (window != top) {
-
-
-                                    leiku.linkFn({ url: "/w/web/yafang/pages/login.html", param: { url: decodeURIComponent(window.location.href) } });
-                                } else {
-                                    leiku.linkFn({ url: "/w/web/yafang/pages/login.html", param: { url: decodeURIComponent(window.location.href) } });
-                                }
-                            }
-                            if (res.obj.Type == 0) {
-                                if (window != top) {
-                                    leiku.linkFn({ url: "/w/web/yafang/pages/login.html", param: { url: decodeURIComponent(window.location.href) } });
-                                } else {
-                                    leiku.linkFn({ url: "/w/web/yafang/pages/login.html", param: { url: decodeURIComponent(window.location.href) } });
-                                }
-                                //window.location.href = "/w/web/yafang/index.html?Id="+res.obj.PageId;
-                            }
-                        } else {
-
-
-                            if (window != top) {
-                                leiku.linkFn({ url: "/w/web/yafang/pages/login.html", param: { url: decodeURIComponent(window.location.href) } });
-                            } else {
-                                leiku.linkFn({ url: "/w/web/yafang/pages/login.html", param: { url: decodeURIComponent(window.location.href) } });
-                            }
-                        }
-                    }
-
-
-
+            }
+        }).then(function (res) {
+            if (!res.data.hasOwnProperty('success')) {
+                succ(res.data);
+            }
+            if (!res.data.success) {
+                if (res.data.code == 0) {
 
                     if (fail) {
-                        fail(res);
+                        fail(res.data);
+
                     } else {
-                        vant.Toast(res.msg)
+                        Vue.prototype.$message.error(res.data.msg)
                     }
-                }
-            },
-            error: function (err) {
-                console.log(vant);
-            },
-            complete: function (res) {
-                if (callback) callback(res);
+                } else if (res.data.code == 1 || res.data.code == 2) {
+
+                    leiku.linkFn({ url: "/demo/zhongheng/zhpc/pages/y_login.html", param: { url: encodeURIComponent(window.location.href) } });
+                } /* else if (res.data.code == 3) {
+
+                    leiku.linkFn({ url: "/w/error/error.html", param: { msg: encodeURIComponent(res.data.msg) } });
+                } */
+				/* if (res.data.code == 2) {
+					
+				} */
+				/* if (res.data.code == 1) {
+					
+				} else if (res.data.number == 2) {
+					//window.location.href = '/w/mobile/404.html?msg=' + res.data.UserName + '账号受限，请联系客服';
+				} else {
+					if (fail) {
+						fail(res.data)
+					} else {
+						console.log(res.data.msg)
+					};
+				} */
+            } else {
+                succ(res.data);
+            }
+        }).catch(function (err) {
+            if (fail) {
+                console.log('触发fail')
+                fail(err);
             }
         })
+    },
+    tc(str) {
+        layer.open({
+            content: str,
+            shade: false,
+            time: 1.5
+        })
+    },
+    //上传图片
+    upload(succ) {
+        let ul = new UploadJs({
+            before: function () { },
+            multiple: false,
+            done: function (arr) {
+                if (succ) {
+                    succ(arr);
+                }
+            },
+            error: function (msg) { }
+        });
+        ul.open();
     },
     linkFn(obj) {
         let param = [],
             str = "";
         if (!obj.param) obj.param = new Object();
-
         for (var i in obj.param) {
             param.push(i + "=" + obj.param[i]);
         }
@@ -75,7 +87,7 @@ var leiku = {
 
         window.location.href = obj.url + "?" + str;
     },
-    //鎵惧嚭url鐨勬煇涓瓧娈�
+    //找出url的某个字段
     GetUrlParam: function (paraName) {
         var url = document.location.toString();
         var arrObj = url.split("?");
@@ -95,7 +107,7 @@ var leiku = {
             return "";
         }
     },
-    //鎵惧嚭鏁扮粍閲嶅鐨勫厓绱�
+    //找出数组重复的元素
     duplicates: function (arr) {
         var result = [];
         arr.forEach(function (item) {
@@ -104,12 +116,53 @@ var leiku = {
         })
         return result;
     },
-    //鑾峰彇闈炶闂存牱寮�
+    //获取非行间样式
     getStyle: function (obj, name) {
         if (obj.currentStyle) {
             return obj.currentStyle[name];
         } else {
             return getComputedStyle(obj, false)[name];
         }
+    },
+    isXml(arr) {
+        var x2js = new X2JS();
+        var ob = {
+            arr: arr
+        };
+        var xmlAsStr = x2js.json2xml_str(ob);
+        return xmlAsStr;
+    },
+    isJson(xml) {
+        var x2js = new X2JS();
+        var jsonAsStr = x2js.xml_str2json(xml);
+        return jsonAsStr;
+    },
+
+    getDate: function (str) {
+        if (str >= 10) {
+            return str;
+        } else {
+            return '0' + str
+        }
+    },
+    getImg(imgs) {
+        if (imgs) {
+            if (imgs.match(/\/[^.]+\.[a-z]{3,4}/gi)) {
+                return imgs.match(/\/[^.]+\.[a-z]{3,4}/gi);
+            } else {
+                return []
+            }
+        } else {
+            return []
+        }
+    },
+    formatDate: function (datetime) {
+        var year = datetime.getFullYear(),
+            month = (datetime.getMonth() + 1 < 10) ? '0' + (datetime.getMonth() + 1) : datetime.getMonth() + 1,
+            day = datetime.getDate() < 10 ? '0' + datetime.getDate() : datetime.getDate(),
+            hour = datetime.getHours() < 10 ? '0' + datetime.getHours() : datetime.getHours(),
+            min = datetime.getMinutes() < 10 ? '0' + datetime.getMinutes() : datetime.getMinutes(),
+            sec = datetime.getSeconds() < 10 ? '0' + datetime.getSeconds() : datetime.getSeconds();
+        return year + '-' + month + '-' + day /* + ' ' + hour + ':' + min + ':' + sec */
     }
 }
